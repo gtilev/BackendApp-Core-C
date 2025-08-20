@@ -16,18 +16,28 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app
 
 # Install Python dependencies
-COPY requirements.txt /app/
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . /app/
-
-# Create uploads directory
-RUN mkdir -p /app/uploads
+# Copy application code with explicit paths
+COPY main.py /app/
+COPY simple_app.py /app/
+COPY simple_test_server.py /app/
+COPY test_api_server.py /app/
+COPY test_server.py /app/
+COPY alembic.ini /app/
+COPY app/ /app/app/
+COPY alembic/ /app/alembic/
+COPY tests/ /app/tests/
+COPY files/ /app/files/
+COPY docs/ /app/docs/
 
 # Create a non-root user and switch to it
-RUN adduser --disabled-password --gecos "" appuser
-RUN chown -R appuser:appuser /app
+RUN adduser --disabled-password --gecos "" appuser && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
 USER appuser
 
 # Run the application

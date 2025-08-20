@@ -7,10 +7,12 @@ from sqlalchemy import and_, or_
 from app.app import models, schemas
 from app.api import deps
 
-router = APIRouter()
+router = APIRouter(tags=["operations"])
 
 
-@router.get("/", response_model=schemas.operation.OperationList)
+@router.get("/", response_model=schemas.operation.OperationList,
+          summary="List operations",
+          description="Retrieve accounting operations with comprehensive filtering options")
 def get_operations(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -80,7 +82,9 @@ def get_operations(
     return {"items": operations, "total": total}
 
 
-@router.get("/{operation_id}", response_model=schemas.operation.Operation)
+@router.get("/{operation_id}", response_model=schemas.operation.Operation,
+           summary="Get operation details",
+           description="Get detailed information about a specific accounting operation")
 def get_operation(
     *,
     db: Session = Depends(deps.get_db),
@@ -102,7 +106,9 @@ def get_operation(
     return operation
 
 
-@router.get("/statistics/summary", response_model=dict)
+@router.get("/statistics/summary", response_model=dict,
+            summary="Get operation statistics",
+            description="Get summary statistics about accounting operations including counts and totals")
 def get_operations_summary(
     db: Session = Depends(deps.get_db),
     start_date: Optional[date] = None,
@@ -164,7 +170,9 @@ def get_operations_summary(
     }
 
 
-@router.get("/export", response_model=dict)
+@router.get("/export", response_model=dict,
+           summary="Export operations",
+           description="Export filtered accounting operations (placeholder for future implementation)")
 def export_operations(
     db: Session = Depends(deps.get_db),
     # Include the same filters as get_operations

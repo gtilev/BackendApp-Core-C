@@ -37,6 +37,21 @@ class S3Service:
             verify=settings.S3_ENDPOINT_URL is None
         )
     
+    def check_connection(self) -> bool:
+        """
+        Check if the connection to S3/MinIO is working
+        
+        Returns:
+            True if connection is successful, False otherwise
+        """
+        try:
+            # List buckets to check if connection works
+            self.s3_client.list_buckets()
+            return True
+        except Exception as e:
+            logger.error(f"S3 connection check failed: {e}")
+            return False
+    
     def upload_file(self, file_content: Union[BinaryIO, bytes], object_name: str) -> Tuple[bool, str]:
         """
         Upload a file to S3

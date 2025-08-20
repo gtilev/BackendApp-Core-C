@@ -13,10 +13,11 @@ from app.services.file_processor import FileProcessor
 from app.services.template_detector import TemplateDetector
 from app.services.s3 import S3Service
 
-router = APIRouter()
+router = APIRouter(tags=["files"])
 
 
-@router.post("/upload", response_model=schemas.file.File)
+@router.post("/upload", response_model=schemas.file.File, summary="Upload a new file",
+            description="Upload an Excel file to S3 storage and detect its template type")
 async def upload_file(
     *,
     db: Session = Depends(deps.get_db),
@@ -72,7 +73,8 @@ async def upload_file(
     return db_file
 
 
-@router.post("/{file_id}/process", response_model=schemas.operation.OperationList)
+@router.post("/{file_id}/process", response_model=schemas.operation.OperationList,
+            summary="Process a file", description="Extract accounting operations from an uploaded file")
 def process_file(
     *,
     db: Session = Depends(deps.get_db),
@@ -119,7 +121,8 @@ def process_file(
     return {"items": db_operations, "total": len(db_operations)}
 
 
-@router.get("/", response_model=schemas.file.FileList)
+@router.get("/", response_model=schemas.file.FileList,
+           summary="List files", description="Get a list of all uploaded files with filtering options")
 def get_files(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -148,7 +151,8 @@ def get_files(
     return {"items": files, "total": total}
 
 
-@router.get("/{file_id}", response_model=schemas.file.FileWithOperationCount)
+@router.get("/{file_id}", response_model=schemas.file.FileWithOperationCount,
+           summary="Get file details", description="Get detailed information about a specific file")
 def get_file(
     *,
     db: Session = Depends(deps.get_db),
@@ -181,7 +185,8 @@ def get_file(
     return result
 
 
-@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None,
+              summary="Delete file", description="Delete a file from S3 storage and database")
 def delete_file(
     *,
     db: Session = Depends(deps.get_db),

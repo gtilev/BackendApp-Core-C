@@ -11,10 +11,11 @@ from app.core import security
 from app.core.config import settings
 from app.services.auth import authenticate_user, create_user, get_user_by_username
 
-router = APIRouter()
+router = APIRouter(tags=["auth"])
 
 
-@router.post("/login", response_model=schemas.token.Token)
+@router.post("/login", response_model=schemas.token.Token,
+           summary="User login", description="OAuth2 compatible login endpoint to get an access token")
 def login_access_token(
     db: Session = Depends(deps.get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
@@ -37,7 +38,8 @@ def login_access_token(
     }
 
 
-@router.post("/register", response_model=schemas.user.User)
+@router.post("/register", response_model=schemas.user.User,
+            summary="Register user", description="Create a new user account")
 def register_user(
     *,
     db: Session = Depends(deps.get_db),
@@ -57,7 +59,8 @@ def register_user(
     return user
 
 
-@router.post("/test-token", response_model=schemas.user.User)
+@router.post("/test-token", response_model=schemas.user.User,
+            summary="Test authentication", description="Verify if the access token is valid")
 def test_token(current_user: schemas.user.User = Depends(deps.get_current_user)) -> Any:
     """
     Test access token
