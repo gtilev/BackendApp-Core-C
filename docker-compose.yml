@@ -15,8 +15,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-accounting}
       - S3_ENDPOINT_URL=http://minio:9000
     depends_on:
-      - db
-      - minio
+        db:
+          condition: service_healthy
+        minio:
+          condition: service_started
     networks:
       - accounting-network
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -37,6 +39,12 @@ services:
     networks:
       - accounting-network
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     
   minio:
     image: quay.io/minio/minio

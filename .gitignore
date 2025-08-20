@@ -94,8 +94,8 @@ celerybeat.pid
 *.sage.py
 
 # --- dotenv ---
-.env
-.env.*
+# .env
+# .env.*
 !.env.example
 
 # --- PyCharm ---
