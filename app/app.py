@@ -14,9 +14,16 @@ class models:
 
 # Import and re-export schemas
 from app.schemas.file import File, FileCreate, FileList, FileWithOperationCount
-from app.schemas.user import User as UserSchema, UserCreate, UserUpdate, UserInDB
+from app.schemas.user import User as UserSchema, UserDisabled
 from app.schemas.operation import Operation, OperationCreate, OperationList
-from app.schemas.token import Token, TokenPayload
+from app.schemas.token import AuthDisabled
+
+# For backward compatibility
+UserCreate = UserDisabled
+UserUpdate = UserDisabled
+UserInDB = UserSchema
+Token = AuthDisabled
+TokenPayload = AuthDisabled
 
 # Create a schemas namespace
 class schemas:

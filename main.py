@@ -24,7 +24,6 @@ app = FastAPI(
     * Excel file upload and processing from various accounting software formats
     * S3-compatible storage using MinIO for scalable file management
     * Automatic template detection and parsing
-    * User authentication and authorization
     
     ## Storage
     
@@ -40,16 +39,20 @@ app = FastAPI(
         },
         {
             "name": "auth",
-            "description": "Authentication operations"
+            "description": "Authentication functionality (disabled)"
         },
         {
             "name": "operations",
             "description": "Accounting operations management"
+        },
+        {
+            "name": "system",
+            "description": "System-related operations and status"
         }
     ],
     contact={
         "name": "API Support",
-        "email": "support@example.com",
+        "email": "office@tsvetan.org",
     },
 )
 
