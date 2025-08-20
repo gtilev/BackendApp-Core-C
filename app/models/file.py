@@ -12,6 +12,8 @@ class UploadedFile(Base):
     upload_date = Column(DateTime(timezone=True), server_default=func.now())
     processed = Column(Boolean, default=False)
     file_path = Column(String)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
     
     # Relationships
     operations = relationship("AccountingOperation", back_populates="file", cascade="all, delete-orphan")
+    user = relationship("User", back_populates="files")

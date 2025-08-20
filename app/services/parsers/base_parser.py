@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 import pandas as pd
 from datetime import datetime
+from io import BytesIO
 
 
 class BaseExcelParser(ABC):
@@ -10,10 +11,24 @@ class BaseExcelParser(ABC):
     @abstractmethod
     def parse(self, file_path: str, file_id: int) -> List[Dict[str, Any]]:
         """
-        Parse the Excel file and extract accounting operations
+        Parse the Excel file from disk and extract accounting operations
         
         Args:
             file_path: Path to the Excel file
+            file_id: ID of the uploaded file in the database
+            
+        Returns:
+            List of dictionaries containing accounting operations data
+        """
+        pass
+    
+    @abstractmethod
+    def parse_memory(self, file_obj: BytesIO, file_id: int) -> List[Dict[str, Any]]:
+        """
+        Parse the Excel file from memory and extract accounting operations
+        
+        Args:
+            file_obj: BytesIO object containing the Excel file
             file_id: ID of the uploaded file in the database
             
         Returns:

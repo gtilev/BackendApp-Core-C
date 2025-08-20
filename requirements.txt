@@ -25,6 +25,7 @@ xlrd>=2.0.1
 loguru>=0.7.2
 python-dotenv>=1.0.0
 tenacity>=8.2.3
+boto3>=1.34.0
 
 # Testing
 pytest>=7.4.2

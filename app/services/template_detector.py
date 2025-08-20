@@ -1,6 +1,7 @@
 from enum import Enum
-from typing import Optional, IO, List
+from typing import Optional, IO, List, Union
 import pandas as pd
+from io import BytesIO
 
 
 class TemplateType(str, Enum):
@@ -27,31 +28,68 @@ class TemplateDetector:
         try:
             # Read first few rows to analyze headers
             df = pd.read_excel(file_path, nrows=10)
-            
-            # Convert headers to lowercase strings for easier comparison
-            headers = self._get_headers(df)
-            
-            # Check for each template type
-            if self._check_rival_pattern(df, headers):
-                return TemplateType.RIVAL
-                
-            if self._check_ajur_pattern(df, headers):
-                return TemplateType.AJUR
-                
-            if self._check_microinvest_pattern(df, headers):
-                return TemplateType.MICROINVEST
-                
-            if self._check_business_navigator_pattern(df, headers):
-                return TemplateType.BUSINESS_NAVIGATOR
-                
-            if self._check_universum_pattern(df, headers):
-                return TemplateType.UNIVERSUM
-                
-            return None
+            return self._analyze_dataframe(df)
         except Exception as e:
             # Log the error
             print(f"Error detecting template: {e}")
             return None
+    
+    def detect_template_from_bytes(self, file_obj: Union[BytesIO, bytes]) -> Optional[TemplateType]:
+        """
+        Detect the template type from file content in memory
+        
+        Args:
+            file_obj: BytesIO object or bytes containing the Excel file
+            
+        Returns:
+            TemplateType or None if the template cannot be detected
+        """
+        try:
+            # If we received bytes, convert to BytesIO
+            if isinstance(file_obj, bytes):
+                file_obj = BytesIO(file_obj)
+                
+            # Reset file pointer to beginning just in case
+            file_obj.seek(0)
+            
+            # Read first few rows to analyze headers
+            df = pd.read_excel(file_obj, nrows=10)
+            return self._analyze_dataframe(df)
+        except Exception as e:
+            # Log the error
+            print(f"Error detecting template from bytes: {e}")
+            return None
+    
+    def _analyze_dataframe(self, df: pd.DataFrame) -> Optional[TemplateType]:
+        """
+        Analyze a DataFrame to determine the template type
+        
+        Args:
+            df: Pandas DataFrame containing the Excel data
+            
+        Returns:
+            TemplateType or None if the template cannot be detected
+        """
+        # Convert headers to lowercase strings for easier comparison
+        headers = self._get_headers(df)
+        
+        # Check for each template type
+        if self._check_rival_pattern(df, headers):
+            return TemplateType.RIVAL
+            
+        if self._check_ajur_pattern(df, headers):
+            return TemplateType.AJUR
+            
+        if self._check_microinvest_pattern(df, headers):
+            return TemplateType.MICROINVEST
+            
+        if self._check_business_navigator_pattern(df, headers):
+            return TemplateType.BUSINESS_NAVIGATOR
+            
+        if self._check_universum_pattern(df, headers):
+            return TemplateType.UNIVERSUM
+            
+        return None
     
     def _get_headers(self, df: pd.DataFrame) -> List[str]:
         """Convert DataFrame headers to lowercase strings"""

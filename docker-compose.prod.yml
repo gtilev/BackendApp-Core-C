@@ -6,7 +6,6 @@ services:
     container_name: accounting-api-prod
     restart: always
     volumes:
-      - uploaded_files:/app/uploads
       - ./logs:/app/logs
     ports:
       - "8000:8000"
@@ -17,12 +16,14 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - S3_ENDPOINT_URL=http://minio:9000
     depends_on:
       - db
+      - minio
     networks:
       - accounting-network
     # Production command without reload
-    command: uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
   db:
     image: postgres:14-alpine
@@ -40,6 +41,24 @@ services:
       - "5432"  # Only expose to internal network
     networks:
       - accounting-network
+      
+  # For production, consider using distributed MinIO with erasure coding
+  # See https://min.io/docs/minio/linux/operations/install-deploy-manage/deploy-minio-multi-node-multi-drive.html
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio-prod
+    restart: always
+    volumes:
+      - minio_data:/data
+    expose:
+      - "9000"
+      - "9001"
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_KEY:-minioadminStrongPass}
+    networks:
+      - accounting-network
+    command: server /data --console-address ":9001"
 
 networks:
   accounting-network:
@@ -47,4 +66,4 @@ networks:
 
 volumes:
   postgres_data:
-  uploaded_files:
+  minio_data:

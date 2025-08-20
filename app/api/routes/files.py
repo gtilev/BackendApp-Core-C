@@ -1,4 +1,6 @@
+import io
 import os
+import uuid
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Query
 from sqlalchemy.orm import Session
@@ -9,6 +11,7 @@ from app.api import deps
 from app.core.config import settings
 from app.services.file_processor import FileProcessor
 from app.services.template_detector import TemplateDetector
+from app.services.s3 import S3Service
 
 router = APIRouter()
 
@@ -29,24 +32,33 @@ async def upload_file(
             detail="Invalid file format. Only Excel files (.xls, .xlsx) are supported."
         )
     
-    # Create uploads directory if it doesn't exist
-    os.makedirs(settings.UPLOAD_FOLDER, exist_ok=True)
-    
-    # Save file to disk
-    file_path = os.path.join(settings.UPLOAD_FOLDER, file.filename)
+    # Read file content
     contents = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(contents)
+    
+    # Create a BytesIO object for in-memory file processing
+    file_obj = io.BytesIO(contents)
     
     # Detect template type
     template_detector = TemplateDetector()
-    template_type = template_detector.detect_template(file_path)
+    template_type = template_detector.detect_template_from_bytes(file_obj)
     
     if not template_type:
-        os.remove(file_path)  # Clean up file if template not recognized
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not recognize Excel template format."
+        )
+    
+    # Generate a unique S3 object key
+    s3_key = f"{uuid.uuid4()}-{file.filename}"
+    
+    # Upload to S3
+    s3_service = S3Service()
+    success, message = s3_service.upload_file(contents, s3_key)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload file to storage: {message}"
         )
     
     # Create file record in database
@@ -54,7 +66,7 @@ async def upload_file(
     db_file = file_processor.create_file(
         filename=file.filename,
         template_type=template_type.value,
-        file_path=file_path
+        file_path=s3_key  # Store S3 key instead of local path
     )
     
     return db_file
@@ -188,12 +200,13 @@ def delete_file(
             detail="File not found"
         )
     
-    # Delete the physical file if it exists
-    if file.file_path and os.path.exists(file.file_path):
+    # Delete the file from S3 if it exists
+    if file.file_path:
         try:
-            os.remove(file.file_path)
+            s3_service = S3Service()
+            s3_service.delete_file(file.file_path)
         except Exception as e:
-            print(f"Error deleting file {file.file_path}: {e}")
+            print(f"Error deleting file {file.file_path} from S3: {e}")
     
     # Delete the database record (cascade will delete operations)
     db.delete(file)

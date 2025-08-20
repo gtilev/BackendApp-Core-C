@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.abspath("."))
 # Import routers and dependencies
 from app.api.api import api_router
 from app.core.config import settings
+from app.db.init_db import init_db
+from app.utils.minio_init import init_minio_bucket
 
 # Create the FastAPI application
 app = FastAPI(
@@ -41,6 +43,12 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+# Initialize database tables
+init_db()
+
+# Initialize MinIO bucket
+init_minio_bucket()
 
 # For direct execution
 if __name__ == "__main__":

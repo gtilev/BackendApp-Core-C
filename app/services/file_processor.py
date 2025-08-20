@@ -1,4 +1,5 @@
 import os
+import io
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 
@@ -7,6 +8,7 @@ from app.models.operation import AccountingOperation
 from app.services.template_detector import TemplateDetector, TemplateType
 from app.services.parsers.rival_parser import RivalParser
 from app.services.parsers.ajur_parser import AjurParser
+from app.services.s3 import S3Service
 # Import other parsers as they are implemented
 # from app.services.parsers.microinvest_parser import MicroinvestParser
 # from app.services.parsers.business_navigator_parser import BusinessNavigatorParser
@@ -70,12 +72,18 @@ class FileProcessor:
             print(f"File with ID {file_id} not found")
             return None
         
-        # Check if file exists
-        if not os.path.exists(file_record.file_path):
-            print(f"File {file_record.file_path} does not exist")
-            return None
-        
         try:
+            # Download file from S3
+            s3_service = S3Service()
+            file_content = s3_service.download_file(file_record.file_path)
+            
+            if not file_content:
+                print(f"Could not download file {file_record.file_path} from S3")
+                return None
+            
+            # Create a file-like object from the content
+            file_obj = io.BytesIO(file_content)
+            
             # Get parser for the template type
             parser = self.parsers.get(file_record.template_type)
             if not parser:
@@ -83,7 +91,7 @@ class FileProcessor:
                 return None
             
             # Parse the file
-            operations = parser.parse(file_record.file_path, file_id)
+            operations = parser.parse_memory(file_obj, file_id)
             
             # Save operations to database
             for operation_data in operations:

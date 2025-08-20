@@ -39,8 +39,13 @@ class Settings(BaseSettings):
         db_str = f"postgresql://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}/{values.get('POSTGRES_DB') or ''}"
         return db_str
     
-    # File uploads
-    UPLOAD_FOLDER: str = "uploads"
+    # S3 Storage
+    USE_S3: bool = True
+    S3_BUCKET: str = "accounting-files"
+    S3_REGION: str = "us-east-1"
+    AWS_ACCESS_KEY: Optional[str] = None
+    AWS_SECRET_KEY: Optional[str] = None
+    S3_ENDPOINT_URL: Optional[str] = None  # For MinIO or other S3-compatible services
     
     class Config:
         case_sensitive = True
