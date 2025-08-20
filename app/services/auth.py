@@ -2,7 +2,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app import models, schemas
+from app.app import models, schemas
 from app.core.security import get_password_hash, verify_password
 
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status,
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
-from app import models, schemas
+from app.app import models, schemas
 from app.api import deps
 from app.core.config import settings
 from app.services.file_processor import FileProcessor
@@ -169,12 +169,12 @@ def get_file(
     return result
 
 
-@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_file(
     *,
     db: Session = Depends(deps.get_db),
     file_id: int
-) -> Any:
+) -> None:
     """
     Delete a file and its associated operations.
     """
@@ -198,5 +198,3 @@ def delete_file(
     # Delete the database record (cascade will delete operations)
     db.delete(file)
     db.commit()
-    
-    return None
