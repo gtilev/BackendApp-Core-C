@@ -20,7 +20,8 @@ services:
         minio:
           condition: service_started
     networks:
-      - accounting-network
+      accounting-network:
+        ipv4_address: 172.20.0.2
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   db:
@@ -37,7 +38,8 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - accounting-network
+      accounting-network:
+        ipv4_address: 172.20.0.3
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -58,7 +60,8 @@ services:
     volumes:
       - minio_data:/data
     networks:
-      - accounting-network
+      accounting-network:
+        ipv4_address: 172.20.0.4
     command: server /data --console-address ":9001"
 
   cloudflared:
@@ -67,11 +70,16 @@ services:
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token eyJhIjoiMmRkNjk4MmZjYzE4ZDY5N2M3YWUzNDdkMWM4MjgwMjAiLCJ0IjoiMWQ0YzcwMzUtNzQ4NS00NjhmLWFiZTktNDFiMGViNzBmOGE1IiwicyI6Ik1UQmtNV0l6TVdJdE1EWm1NUzAwWkRNd0xXRTVPREl0TXpFME1tVXhZVEJtWXpnMCJ9
     networks:
-      - accounting-network
+      accounting-network:
+        ipv4_address: 172.20.0.5
 
 networks:
   accounting-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
 
 volumes:
   postgres_data:
