@@ -61,6 +61,14 @@ services:
       - accounting-network
     command: server /data --console-address ":9001"
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiMmRkNjk4MmZjYzE4ZDY5N2M3YWUzNDdkMWM4MjgwMjAiLCJ0IjoiMWQ0YzcwMzUtNzQ4NS00NjhmLWFiZTktNDFiMGViNzBmOGE1IiwicyI6Ik1UQmtNV0l6TVdJdE1EWm1NUzAwWkRNd0xXRTVPREl0TXpFME1tVXhZVEJtWXpnMCJ9
+    networks:
+      - accounting-network
+
 networks:
   accounting-network:
     driver: bridge
