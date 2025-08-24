@@ -16,7 +16,9 @@ from app.services.s3 import S3Service
 router = APIRouter(tags=["files"])
 
 
-@router.post("/upload", response_model=schemas.file.File, summary="Upload a new file",
+@router.post("/upload", 
+            response_model=schemas.file.File,
+            summary="Upload a new file",
             description="Upload an Excel file to S3 storage and detect its template type")
 async def upload_file(
     *,
@@ -28,22 +30,30 @@ async def upload_file(
     """
     # Validate file extension
     if not file.filename.endswith(('.xls', '.xlsx')):
+        print(f"[ERROR] Invalid file format: {file.filename}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid file format. Only Excel files (.xls, .xlsx) are supported."
         )
     
+    print(f"[DEBUG] Processing file upload: {file.filename}")
+    
     # Read file content
     contents = await file.read()
+    print(f"[DEBUG] File content read, size: {len(contents)} bytes")
     
     # Create a BytesIO object for in-memory file processing
     file_obj = io.BytesIO(contents)
     
     # Detect template type
+    print(f"[DEBUG] Starting template detection for file: {file.filename}")
     template_detector = TemplateDetector()
     template_type = template_detector.detect_template_from_bytes(file_obj)
     
+    print(f"[DEBUG] Template detection result: {template_type}")
+    
     if not template_type:
+        print(f"[ERROR] Could not recognize template format for file: {file.filename}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not recognize Excel template format."

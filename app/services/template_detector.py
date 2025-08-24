@@ -45,19 +45,33 @@ class TemplateDetector:
             TemplateType or None if the template cannot be detected
         """
         try:
+            print("[DEBUG] Starting detect_template_from_bytes")
+            
             # If we received bytes, convert to BytesIO
             if isinstance(file_obj, bytes):
                 file_obj = BytesIO(file_obj)
+                print("[DEBUG] Converted bytes to BytesIO")
                 
             # Reset file pointer to beginning just in case
             file_obj.seek(0)
             
             # Read first few rows to analyze headers
+            print("[DEBUG] Reading Excel file with pandas")
             df = pd.read_excel(file_obj, nrows=10)
+            print(f"[DEBUG] DataFrame shape: {df.shape}")
+            
+            # Print headers as a list
+            headers = [str(col) for col in df.columns]
+            print(f"[DEBUG] Excel headers: {headers}")
+            
+            # Print first few rows for debugging
+            print("[DEBUG] First 3 rows of data:")
+            print(df.head(3))
+            
             return self._analyze_dataframe(df)
         except Exception as e:
             # Log the error
-            print(f"Error detecting template from bytes: {e}")
+            print(f"[ERROR] Error detecting template from bytes: {e}")
             return None
     
     def _analyze_dataframe(self, df: pd.DataFrame) -> Optional[TemplateType]:
@@ -70,25 +84,39 @@ class TemplateDetector:
         Returns:
             TemplateType or None if the template cannot be detected
         """
+        print("[DEBUG] Starting _analyze_dataframe")
+        
         # Convert headers to lowercase strings for easier comparison
         headers = self._get_headers(df)
+        print(f"[DEBUG] Lowercase headers: {headers}")
         
         # Check for each template type
+        print("[DEBUG] Checking Rival pattern")
         if self._check_rival_pattern(df, headers):
+            print("[DEBUG] Matched Rival pattern")
             return TemplateType.RIVAL
-            
+        
+        print("[DEBUG] Checking Ajur pattern")
         if self._check_ajur_pattern(df, headers):
+            print("[DEBUG] Matched Ajur pattern")
             return TemplateType.AJUR
-            
+        
+        print("[DEBUG] Checking Microinvest pattern")
         if self._check_microinvest_pattern(df, headers):
+            print("[DEBUG] Matched Microinvest pattern")
             return TemplateType.MICROINVEST
-            
+        
+        print("[DEBUG] Checking Business Navigator pattern")
         if self._check_business_navigator_pattern(df, headers):
+            print("[DEBUG] Matched Business Navigator pattern")
             return TemplateType.BUSINESS_NAVIGATOR
-            
+        
+        print("[DEBUG] Checking Universum pattern")
         if self._check_universum_pattern(df, headers):
+            print("[DEBUG] Matched Universum pattern")
             return TemplateType.UNIVERSUM
-            
+        
+        print("[DEBUG] No template pattern matched")
         return None
     
     def _get_headers(self, df: pd.DataFrame) -> List[str]:
@@ -112,10 +140,42 @@ class TemplateDetector:
         
         AJUR: вид, номер, дата, дебит, аналитична, кредит, аналитична, сума, обяснение
         """
-        # Check for specific column patterns in AJUR template
-        expected_keywords = ["вид", "номер", "дата", "дебит", "аналитична", "кредит", "сума", "обяснение"]
-        return any("аналитична" in h for h in headers) and \
-               self._check_keywords_in_headers(headers, expected_keywords, min_matches=5)
+        print("[DEBUG] Inside _check_ajur_pattern")
+        
+        # Update expected keywords to match the actual headers (case-insensitive)
+        expected_keywords = ["№",
+                             "дата рег",
+                             "вид док",
+                             "документ no / дата",
+                             "рег. no",
+                             "дт с/ка",
+                             "аналитична сметка",
+                             "кт с/ка",
+                             "количество",
+                             "мярка",
+                             "сума",
+                             "обяснителен текст",
+                             "установено при одита",
+                             "отклонение",
+                             "тествани на контролни действия",
+                             "установено наличие  на контролно действие   при одита",
+                             ]
+        
+        print(f"[DEBUG] Expected Ajur keywords: {expected_keywords}")
+        
+        # Check for the specific pattern
+        # Make the check case-insensitive by comparing lowercase versions
+        has_vid_dok = any("вид док" in h.lower() for h in headers)
+        print(f"[DEBUG] Has 'вид док' in headers (case-insensitive): {has_vid_dok}")
+        
+        # Check for keyword matches
+        keyword_matches = self._check_keywords_in_headers(headers, expected_keywords, min_matches=2)
+        print(f"[DEBUG] Ajur keyword matches result: {keyword_matches}")
+        
+        result = has_vid_dok and keyword_matches
+        print(f"[DEBUG] Ajur pattern match result: {result}")
+        
+        return result
     
     def _check_microinvest_pattern(self, df: pd.DataFrame, headers: List[str]) -> bool:
         """
@@ -171,9 +231,21 @@ class TemplateDetector:
         Returns:
             True if enough matches are found, False otherwise
         """
-        matches = 0
-        for keyword in keywords:
-            if any(keyword in header for header in headers):
-                matches += 1
+        print(f"[DEBUG] Checking for {min_matches} matches out of {len(keywords)} keywords")
         
-        return matches >= min_matches
+        matches = 0
+        matched_keywords = []
+        
+        for keyword in keywords:
+            # Make the comparison case-insensitive and more flexible with whitespace
+            if any(keyword.lower() in header.lower() for header in headers):
+                matches += 1
+                matched_keywords.append(keyword)
+        
+        print(f"[DEBUG] Found {matches} matches: {matched_keywords}")
+        print(f"[DEBUG] Missing keywords: {[k for k in keywords if k not in matched_keywords]}")
+        
+        result = matches >= min_matches
+        print(f"[DEBUG] Keywords match result: {result} ({matches}/{min_matches})")
+        
+        return result
