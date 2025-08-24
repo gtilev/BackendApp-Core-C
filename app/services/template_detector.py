@@ -169,7 +169,7 @@ class TemplateDetector:
         print(f"[DEBUG] Has 'вид док' in headers (case-insensitive): {has_vid_dok}")
         
         # Check for keyword matches
-        keyword_matches = self._check_keywords_in_headers(headers, expected_keywords, min_matches=2)
+        keyword_matches = self._check_keywords_in_headers(headers, expected_keywords, min_matches=16)
         print(f"[DEBUG] Ajur keyword matches result: {keyword_matches}")
         
         result = has_vid_dok and keyword_matches
