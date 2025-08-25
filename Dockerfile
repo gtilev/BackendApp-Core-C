@@ -25,8 +25,8 @@ COPY main.py /app/
 COPY .env /app/
 COPY simple_app.py /app/
 COPY simple_test_server.py /app/
-COPY test_api_server.py /app/
-COPY test_server.py /app/
+COPY tests/ /app/tests
+
 COPY alembic.ini /app/
 COPY app/ /app/app/
 COPY alembic/ /app/alembic/
