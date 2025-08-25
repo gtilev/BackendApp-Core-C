@@ -3,64 +3,83 @@ version: '3.8'
 services:
   api:
     build: .
-    container_name: accounting-api-prod
-    restart: always 
+    container_name: accounting-api
     ports:
-      - "8000:8000"
+      - "8001:8000"
     env_file:
-      - .env.prod
+      - .env
     environment:
       - POSTGRES_SERVER=db
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-accounting}
       - S3_ENDPOINT_URL=http://minio:9000
     depends_on:
-      - db
-      - minio
+        db:
+          condition: service_healthy
+        minio:
+          condition: service_started
     networks:
-      - accounting-network
-    # Production command without reload
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+      accounting-network:
+        ipv4_address: 172.20.0.2
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   db:
     image: postgres:14-alpine
-    container_name: accounting-db-prod
-    restart: always
+    container_name: accounting-db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
-      - .env.prod
+      - .env
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    expose:
-      - "5432"  # Only expose to internal network
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-accounting}
+    ports:
+      - "5432:5432"
     networks:
-      - accounting-network
-      
-  # For production, consider using distributed MinIO with erasure coding
-  # See https://min.io/docs/minio/linux/operations/install-deploy-manage/deploy-minio-multi-node-multi-drive.html
+      accounting-network:
+        ipv4_address: 172.20.0.3
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
   minio:
     image: quay.io/minio/minio
-    container_name: minio-prod
-    restart: always
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadminStrongPass
     volumes:
       - minio_data:/data
-    expose:
-      - "9000"
-      - "9001"
-    environment:
-      - MINIO_ROOT_USER=${AWS_ACCESS_KEY:-minioadmin}
-      - MINIO_ROOT_PASSWORD=${AWS_SECRET_KEY:-minioadminStrongPass}
     networks:
-      - accounting-network
+      accounting-network:
+        ipv4_address: 172.20.0.4
     command: server /data --console-address ":9001"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiMmRkNjk4MmZjYzE4ZDY5N2M3YWUzNDdkMWM4MjgwMjAiLCJ0IjoiMWQ0YzcwMzUtNzQ4NS00NjhmLWFiZTktNDFiMGViNzBmOGE1IiwicyI6Ik1UQmtNV0l6TVdJdE1EWm1NUzAwWkRNd0xXRTVPREl0TXpFME1tVXhZVEJtWXpnMCJ9
+    networks:
+      accounting-network:
+        ipv4_address: 172.20.0.5
 
 networks:
   accounting-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
 
 volumes:
   postgres_data:
