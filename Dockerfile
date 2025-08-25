@@ -23,8 +23,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code with explicit paths
 COPY main.py /app/
 COPY .env /app/
-COPY simple_app.py /app/
-COPY simple_test_server.py /app/
 COPY tests/ /app/tests
 
 COPY alembic.ini /app/
