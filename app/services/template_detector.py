@@ -184,9 +184,28 @@ class TemplateDetector:
         Микроинвест: дебит с-ка, кредит с-ка, вид документ, дата, номер на док, партньор, основание
         """
         # Check for specific column patterns in Microinvest template
-        expected_keywords = ["дебит", "кредит", "с-ка", "вид документ", "дата", "номер", "партньор", "основание"]
-        return any("партньор" in h for h in headers) and \
-               self._check_keywords_in_headers(headers, expected_keywords, min_matches=5)
+        expected_keywords = ["контиране",
+                             "дата",
+                             "дебит сметка",
+                             "дебит",
+                             "кредит сметка",
+                             "кредит",
+                             "сума",
+                             "док. вид",
+                             "док. дата",
+                             "документ №",
+                             "партньор",
+                             "еик/ддс номер",
+                             "държава",
+                             "основание",
+                             "забележка",
+                             "втора забележка",
+                             "сделка по зддс",
+                             "параграф",
+                             "месец за експорт",
+                             "потребител"]
+        return any("еик/ддс номер" in h for h in headers) and \
+               self._check_keywords_in_headers(headers, expected_keywords, min_matches=20)
     
     def _check_business_navigator_pattern(self, df: pd.DataFrame, headers: List[str]) -> bool:
         """
